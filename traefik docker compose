@@ -1,1 +1,29 @@
+version: "3.3"
 
+services:
+
+  traefik:
+    image: "traefik:v2.9"
+    container_name: "traefik"
+    command:
+      #- "--log.level=DEBUG"
+      #- "--api.insecure=true"
+      #- "--providers.docker=true"
+      #- "--providers.docker.exposedbydefault=false"
+      #- "--entrypoints.web.address=:80"
+    ports:
+      - "8080:80"
+      - "8081:8080"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "/srv/Traefik:/srv/Traefik"
+      - "/srv/Traefik/certs:/srv/Traefik/certs"
+
+  whoami:
+    image: "traefik/whoami"
+    container_name: "simple-service"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami.rule=Host(`villafeliz.online`)"
+      - "traefik.http.routers.whoami.entrypoints=web"
