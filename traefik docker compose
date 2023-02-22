@@ -11,14 +11,15 @@ services:
       #- "--providers.docker=true"
       #- "--providers.docker.exposedbydefault=false"
       #- "--entrypoints.web.address=:80"
+      #- "--entrypoints.websecure.address=:443"
     ports:
       - "8080:80"
       - "8081:8080"
       - "443:443"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "/srv/Traefik:/srv/Traefik"
-      - "/srv/Traefik/certs:/srv/Traefik/certs"
+      - "/srv/traefik:/srv/traefik"
+      - "/srv/traefik/certs:/srv/traefik/certs"
 
   whoami:
     image: "traefik/whoami"
