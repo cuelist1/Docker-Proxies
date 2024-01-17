@@ -1,1 +1,60 @@
+version: '3'
 
+services:
+  traefik:
+    image: "traefik:latest"
+    restart: unless-stopped
+    container_name: "traefik"
+    security_opt:
+      - no-new-privileges:true
+    command:
+      #- "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--providers.providersThrottleDuration=10s"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      #- "--certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+      - "--certificatesresolvers.myresolver.acme.email=cuelist@icloud.com"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "443:443"
+      - "8081:8080"
+      - "8080:80"
+    volumes:
+      - "./letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.entrypoints=http"
+      - "traefik.http.routers.dashboard.rule=Host(`mordor.villafeliz.online`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      - "traefik.http.routers.dashboard.tls=true"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      # Middlewares
+      - "traefik.http.routers.dashboard.middlewares=auth"
+      - "traefik.http.middlewares.secured_chain.chain.middlewares=simple_ratelimit,auth"
+    ## The `simple_ratelimit` middleware allows
+    ## an average of 5 requests per 5 seconds
+    ## and a burst of 2 requests.
+      - "traefik.http.middlewares.simple_ratelimit.ratelimit.average=5"
+      - "traefik.http.middlewares.simple_ratelimit.ratelimit.period=5s"
+      - "traefik.http.middlewares.simple_ratelimit.ratelimit.burst=2"
+      
+  whoami:
+    image: "traefik/whoami"
+    restart: unless-stopped
+    container_name: "simple-service"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami.rule=Host(`villafeliz.online`)"
+      - "traefik.http.routers.whoami.tls=true"
+      - "traefik.http.routers.whoami.entrypoints=web, websecure"
+      - "traefik.http.routers.whoami.tls.certresolver=myresolver"
+      - "traefik.http.routers.whoami.middlewares=auth"
+     
